@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>Audio Visualizer</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+        }
+        .container {
+            text-align: left;
+        }
+        audio {
+            position: relative;
+            bottom: -60px;
+        }
+        canvas {
+            border: 10px ridge #fff;
+            border-radius: 10px;
+            height: 300px;
+        }
+        #visualizer {
+            width: 100%;
+        }
+        .aud1, .aud2, .aud3, .aud4, .aud5, .aud6 {
+            display: none;
+        }
+        #aud1:hover, #aud2:hover, #aud3:hover, #aud4:hover, #aud6:hover{
+            background-color: #fff;
+            color: black;
+        }
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <br><br><br>
+    <div class="container">
+        <canvas id="visualizer"></canvas>
+        <br><br>
+        <center>
+        <b>========{ Made By: Kurt }========</b>
+        </center>
+        <p id="aud1">قالوا له خالفت أقوال الشيوخ</p>
+        <p id="aud2">Blue Shift - RESIST</p>
+        <p id="aud3">HL1 - Military Precision</p>
+        <p id="aud4">Blue Shift - UNNAMED</p>
+        <p id="aud6">Eid AlAedina</p>
+        <input type="file" id="fileInput" accept="audio/*">
+        <audio src="audio/embed.mp3" class="aud1" id="audio1" controls></audio>
+        <audio src="audio/blueshift.mp3" class="aud2" id="audio2" controls></audio>
+        <audio src="audio/militaryprecision.mp3" class="aud3" id="audio3" controls></audio>
+        <audio src="audio/unnamed.mp3" class="aud4" id="audio4" controls></audio>
+        <audio src="audio/aedina.mp3" class="aud6" id="audio6" controls></audio>
+        <audio class="aud5" id="audio5" controls></audio>
+    </div>
+    <script>
+        $(document).ready(function () {
+            let currentAudio = null;
+
+            function stopCurrentAudio() {
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    $(currentAudio).hide();
+                }
+            }
+
+            $('#aud1').click(() => {
+                stopCurrentAudio();
+                currentAudio = document.getElementById('audio1');
+                currentAudio.play();
+                $('.aud1').show();
+            });
+
+            $('#aud2').click(() => {
+                stopCurrentAudio();
+                currentAudio = document.getElementById('audio2');
+                currentAudio.play();
+                $('.aud2').show();
+            });
+
+            $('#aud3').click(() => {
+                stopCurrentAudio();
+                currentAudio = document.getElementById('audio3');
+                currentAudio.play();
+                $('.aud3').show();
+            });
+
+            $('#aud4').click(() => {
+                stopCurrentAudio();
+                currentAudio = document.getElementById('audio4');
+                currentAudio.play();
+                $('.aud4').show();
+            });
+            $('#aud6').click(() => {
+                stopCurrentAudio();
+                currentAudio = document.getElementById('audio6');
+                currentAudio.play();
+                $('.aud6').show();
+            });
+            $('#fileInput').change((event) => {
+                stopCurrentAudio();
+                const file = event.target.files[0];
+                if (file) {
+                    const audio5 = document.getElementById('audio5');
+                    const objectUrl = URL.createObjectURL(file);
+                    audio5.src = objectUrl;
+                    audio5.play();
+                    $(audio5).show();
+                    currentAudio = audio5;
+                }
+            });
+        });
+
+        window.addEventListener('load', () => {
+            const canvas = document.getElementById('visualizer');
+            if (!canvas) {
+                console.error('Elemen canvas tidak ditemukan');
+                return;
+            }
+            const canvasCtx = canvas.getContext('2d');
+            let audioContext;
+            let analyser;
+            let source;
+
+            function setupVisualizer(audio) {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                source = audioContext.createMediaElementSource(audio);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+
+                drawVisualizer();
+            }
+
+            function drawVisualizer() {
+                if (!analyser) {
+                    console.error('Analyzer gagal dimuat');
+                    return;
+                }
+                const WIDTH = canvas.width;
+                const HEIGHT = canvas.height;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                canvas.width = WIDTH;
+                canvas.height = HEIGHT;
+
+                function draw() {
+                    requestAnimationFrame(draw);
+                    analyser.getByteFrequencyData(dataArray);
+
+                    canvasCtx.fillStyle = 'black';
+                    canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+                    const barWidth = (WIDTH / bufferLength) * 34; // Atur ukuran bar / U can modify
+                    let barHeight;
+                    let x = 0;
+
+                    for (let i = 0; i < bufferLength; i++) {
+                        barHeight = dataArray[i];
+                        canvasCtx.fillStyle = 'rgb(0,0,255)';
+                        canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth, barHeight / 2);
+
+                        x += barWidth + 1;
+                    }
+                }
+                draw();
+            }
+
+            document.getElementById('audio1').addEventListener('play', function() {
+                setupVisualizer(this);
+            });
+
+            document.getElementById('audio2').addEventListener('play', function() {
+                setupVisualizer(this);
+            });
+
+            document.getElementById('audio3').addEventListener('play', function() {
+                setupVisualizer(this);
+            });
+
+            document.getElementById('audio4').addEventListener('play', function() {
+                setupVisualizer(this);
+            });
+            document.getElementById('audio6').addEventListener('play', function() {
+                setupVisualizer(this);
+            });
+            document.getElementById('audio5').addEventListener('play', function() {
+                setupVisualizer(this);
+            });
+        });
+    </script>
+</body>
+</html>
