@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,26 +16,21 @@
             background-color: #000;
             color: #fff;
         }
-
         .container {
             text-align: left;
         }
-
         audio {
             position: relative;
             bottom: -60px;
         }
-
         canvas {
             border: 10px ridge #fff;
             border-radius: 10px;
             height: 300px;
         }
-
         #visualizer {
             width: 100%;
         }
-
         .aud1,
         .aud2,
         .aud3,
@@ -45,7 +39,6 @@
         .aud6 {
             display: none;
         }
-
         #aud1:hover,
         #aud2:hover,
         #aud3:hover,
@@ -54,7 +47,6 @@
             background-color: #fff;
             color: black;
         }
-
         ul {
             list-style-type: none;
             margin: 0;
@@ -63,7 +55,6 @@
         }
     </style>
 </head>
-
 <body>
     <br><br><br>
     <div class="container">
@@ -124,7 +115,7 @@
                     audio5.play();
                     $(audio5).show();
                     currentAudio = audio5;
-
+                    
                     currentAudio.addEventListener('ended', autoRefresh);
                 }
             });
@@ -202,7 +193,5 @@
             });
         });
     </script>
-
 </body>
-
 </html>
