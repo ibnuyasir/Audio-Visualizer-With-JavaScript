@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,28 +17,44 @@
             background-color: #000;
             color: #fff;
         }
+
         .container {
             text-align: left;
         }
+
         audio {
             position: relative;
             bottom: -60px;
         }
+
         canvas {
             border: 10px ridge #fff;
             border-radius: 10px;
             height: 300px;
         }
+
         #visualizer {
             width: 100%;
         }
-        .aud1, .aud2, .aud3, .aud4, .aud5, .aud6 {
+
+        .aud1,
+        .aud2,
+        .aud3,
+        .aud4,
+        .aud5,
+        .aud6 {
             display: none;
         }
-        #aud1:hover, #aud2:hover, #aud3:hover, #aud4:hover, #aud6:hover{
+
+        #aud1:hover,
+        #aud2:hover,
+        #aud3:hover,
+        #aud4:hover,
+        #aud6:hover {
             background-color: #fff;
             color: black;
         }
+
         ul {
             list-style-type: none;
             margin: 0;
@@ -46,13 +63,14 @@
         }
     </style>
 </head>
+
 <body>
     <br><br><br>
     <div class="container">
         <canvas id="visualizer"></canvas>
         <br><br>
         <center>
-        <b>========{ Made By: Kurt }========</b>
+            <b>========{ Made By: Kurt }========</b>
         </center>
         <p id="aud1">قالوا له خالفت أقوال الشيوخ</p>
         <p id="aud2">Blue Shift - RESIST</p>
@@ -64,53 +82,37 @@
         <audio src="audio/blueshift.mp3" class="aud2" id="audio2" controls></audio>
         <audio src="audio/militaryprecision.mp3" class="aud3" id="audio3" controls></audio>
         <audio src="audio/unnamed.mp3" class="aud4" id="audio4" controls></audio>
-        <audio src="audio/aedina.mp3" class="aud6" id="audio6" controls></audio>
-        <audio class="aud5" id="audio5" controls></audio>
+        <audio src="audio/aedina.mp3" class="aud5" id="audio5" controls></audio>
+        <audio class="aud6" id="audio6" controls></audio>
     </div>
     <script>
         $(document).ready(function () {
             let currentAudio = null;
+            let zoomLevel = 1;
 
             function stopCurrentAudio() {
                 if (currentAudio) {
                     currentAudio.pause();
                     currentAudio.currentTime = 0;
                     $(currentAudio).hide();
+                    currentAudio.removeEventListener('ended', autoRefresh); // Hapus event listener ended sebelumnya
                 }
             }
+            function playAudio(audioId, visualClass) {
+                stopCurrentAudio();
+                currentAudio = document.getElementById(audioId);
+                currentAudio.play();
+                $(visualClass).show();
 
-            $('#aud1').click(() => {
-                stopCurrentAudio();
-                currentAudio = document.getElementById('audio1');
-                currentAudio.play();
-                $('.aud1').show();
-            });
-
-            $('#aud2').click(() => {
-                stopCurrentAudio();
-                currentAudio = document.getElementById('audio2');
-                currentAudio.play();
-                $('.aud2').show();
-            });
-
-            $('#aud3').click(() => {
-                stopCurrentAudio();
-                currentAudio = document.getElementById('audio3');
-                currentAudio.play();
-                $('.aud3').show();
-            });
-
-            $('#aud4').click(() => {
-                stopCurrentAudio();
-                currentAudio = document.getElementById('audio4');
-                currentAudio.play();
-                $('.aud4').show();
-            });
-            $('#aud6').click(() => {
-                stopCurrentAudio();
-                currentAudio = document.getElementById('audio6');
-                currentAudio.play();
-                $('.aud6').show();
+                currentAudio.addEventListener('ended', autoRefresh);
+            }
+            function autoRefresh() {
+                setTimeout(function () {
+                    location.reload();
+                }, 2000);
+            }
+            ['#aud1', '#aud2', '#aud3', '#aud4', '#aud6'].forEach((id, index) => {
+                $(id).click(() => playAudio(`audio${index + 1}`, `.aud${index + 1}`));
             });
             $('#fileInput').change((event) => {
                 stopCurrentAudio();
@@ -122,10 +124,14 @@
                     audio5.play();
                     $(audio5).show();
                     currentAudio = audio5;
+
+                    currentAudio.addEventListener('ended', autoRefresh);
                 }
             });
+            $('#zoomSlider').on('input', function () {
+                zoomLevel = $(this).val();
+            });
         });
-
         window.addEventListener('load', () => {
             const canvas = document.getElementById('visualizer');
             if (!canvas) {
@@ -136,6 +142,8 @@
             let audioContext;
             let analyser;
             let source;
+            let zoomLevel = 1; // Zoom
+            let zoomRight = Math.sqrt(zoomLevel * 4); // Inisialisasi zoom
 
             function setupVisualizer(audio) {
                 if (!audioContext) {
@@ -143,13 +151,13 @@
                 }
                 source = audioContext.createMediaElementSource(audio);
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
+                analyser.fftSize = 1024;
+                
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
 
                 drawVisualizer();
             }
-
             function drawVisualizer() {
                 if (!analyser) {
                     console.error('Analyzer gagal dimuat');
@@ -160,53 +168,41 @@
                 const bufferLength = analyser.frequencyBinCount;
                 const dataArray = new Uint8Array(bufferLength);
 
-                canvas.width = WIDTH;
-                canvas.height = HEIGHT;
-
                 function draw() {
                     requestAnimationFrame(draw);
                     analyser.getByteFrequencyData(dataArray);
 
-                    canvasCtx.fillStyle = 'black';
-                    canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+                    canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+                    canvasCtx.save();
+                    canvasCtx.scale(zoomLevel + Math.sqrt(zoomRight), 1);
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(0, HEIGHT / 4);
 
-                    const barWidth = (WIDTH / bufferLength) * 34; // Atur ukuran bar / U can modify
-                    let barHeight;
-                    let x = 0;
+                    const sliceWidth = (WIDTH / bufferLength) * (1 / zoomLevel);
+                    let x = 1;
 
                     for (let i = 0; i < bufferLength; i++) {
-                        barHeight = dataArray[i];
-                        canvasCtx.fillStyle = 'rgb(0,0,255)';
-                        canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth, barHeight / 2);
-
-                        x += barWidth + 1;
+                        const y = 1 * HEIGHT / 2 - Math.tan(dataArray[i] / 255) * (HEIGHT / 3);
+                        canvasCtx.lineTo(x, y * 2);
+                        x += sliceWidth;
                     }
+                    canvasCtx.lineTo(WIDTH, HEIGHT / 2);
+                    canvasCtx.strokeStyle = 'rgb(0, 0, 255)';
+                    canvasCtx.lineWidth = 2;
+                    
+                    canvasCtx.stroke();
+                    canvasCtx.restore();
                 }
                 draw();
             }
-
-            document.getElementById('audio1').addEventListener('play', function() {
-                setupVisualizer(this);
-            });
-
-            document.getElementById('audio2').addEventListener('play', function() {
-                setupVisualizer(this);
-            });
-
-            document.getElementById('audio3').addEventListener('play', function() {
-                setupVisualizer(this);
-            });
-
-            document.getElementById('audio4').addEventListener('play', function() {
-                setupVisualizer(this);
-            });
-            document.getElementById('audio6').addEventListener('play', function() {
-                setupVisualizer(this);
-            });
-            document.getElementById('audio5').addEventListener('play', function() {
-                setupVisualizer(this);
+            ['audio1', 'audio2', 'audio3', 'audio4', 'audio5', 'audio6'].forEach(id => {
+                document.getElementById(id).addEventListener('play', function () {
+                    setupVisualizer(this);
+                });
             });
         });
     </script>
+
 </body>
+
 </html>
