@@ -1,2 +1,2 @@
-# BASIC_Audio-Visualizer-With-JavaScript
+# Audio-Visualizer-With-JavaScript
 Just take it :}
